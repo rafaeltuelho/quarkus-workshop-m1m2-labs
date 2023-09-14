@@ -1,0 +1,55 @@
+= Using Openshift built-in Monitoring Stack
+
+In order to use the Openshift built-in Monitoring Stack instead of installing Prometheus manually in the namespace make sure your cluster have the User Workload monitoring enabled. 
+See more in the OCP docs: https://docs.openshift.com/container-platform/4.13/monitoring/enabling-monitoring-for-user-defined-projects.html
+
+Make sure your user has the `monitoring-edit` Namespace Role bound.
+[code]
+====
+# as cluster-admin grant it using
+oc adm policy add-role-to-user monitoring-edit user1 -n user1-project
+====
+
+Then apply the ServiceMonitor to your namespace
+
+[code]
+====
+oc apply -f app-service-monitor-cr.yaml -n userX-project
+====
+
+== Install Grafana using Coreos Operator
+
+Create a Grafana instance
+[code]
+====
+#as cluster-admin
+oc apply -f openshift-grafana-cr.yaml -n user1-project
+====
+
+Bind `cluster-monitoring-view` ClusterRole to the Grafana SA so it can connect to Thanos DataSource.
+[code]
+====
+#as cluster-admin
+oc adm policy add-cluster-role-to-user cluster-monitoring-view -z grafana-a-sa -n user1-project
+
+#check the Cluster Role Binding
+oc get clusterrolebindings.rbac.authorization.k8s.io| grep "grafana.*sa"
+====
+
+Now you can create a Datasource pointing to the Openshift Thanos cluster service endpoint (`https://thanos-querier.openshift-monitoring.svc.cluster.local:9091`)
+To authenticat against Thanos service you have to use the Grafana Service Account Token.
+
+[code]
+====
+export GRAFANA_SA_BEARER_TOKEN=`echo $(oc get secret grafana-a-sa-token-hzblr -n user1-project -o json | jq -r '.data.token') | base64 -d`
+====
+
+Create a Grafana Data Source CR
+
+[code]
+====
+envsubst < openshift-grafana-datasource-cr.yaml | oc -n user1-project apply -f - 
+====
+
+== Additional Notes
+Blog post explaining how the Openshift Monitoring Stack works in detail for User Workloads: https://cloud.redhat.com/blog/thanos-querier-versus-thanos-querier

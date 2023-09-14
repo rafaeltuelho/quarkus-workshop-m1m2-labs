@@ -65,3 +65,16 @@ commands:
       label: 06. Run Native App
       component: quarkus-tools
       commandLine: ./target/people-1.0-SNAPSHOT-runner -Dquarkus.http.port=8081
+  - id: 99-oc-login
+    exec:
+      label: 99. OC Login (user project)
+      component: quarkus-tools
+      commandLine: |
+        clear
+        echo
+        user_project=$(oc whoami)-project
+        echo "current user: $(oc whoami)"
+        echo "current project: $(oc project)"
+        echo
+        oc login -u $(echo $DEVWORKSPACE_NAMESPACE | cut -d'-' -f 1) -p openshift "https://$KUBERNETES_SERVICE_HOST:443" --insecure-skip-tls-verify=true
+        oc project $user_project 
