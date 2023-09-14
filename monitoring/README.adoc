@@ -37,10 +37,11 @@ oc get clusterrolebindings.rbac.authorization.k8s.io| grep "grafana.*sa"
 ----
 
 Now you can create a Datasource pointing to the Openshift Thanos cluster service endpoint (`https://thanos-querier.openshift-monitoring.svc.cluster.local:9091`)
-To authenticat against Thanos service you have to use the Grafana Service Account Token.
+To authenticate against Thanos service you have to use the Grafana Service Account Token.
 
 [code]
 ----
+export USER_PROJECT_NAMESPACE=user-project
 export GRAFANA_SA_BEARER_TOKEN=`echo $(oc get secret grafana-a-sa-token-hzblr -n user1-project -o json | jq -r '.data.token') | base64 -d`
 ----
 
